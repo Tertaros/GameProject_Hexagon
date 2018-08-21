@@ -34,11 +34,19 @@ public class HexMapGenerator_Script : MonoBehaviour {
     [Range(6, 10)]
     public int elevationMaximum = 8;
 
+    [Range(0, 10)]
+    public int mapBorderX = 5;
+
+    [Range(0, 10)]
+    public int mapBorderZ = 5;
+
     HexCellPriorityQueue searchFrontier;
     int searchFrontierPhase;
 
     public int seed;
     public bool useFixedSeed;
+
+    int xMin, xMax, zMin, zMax;
 
     public void GenerateMap(int x, int z)
     {
@@ -62,6 +70,12 @@ public class HexMapGenerator_Script : MonoBehaviour {
         {
             grid.GetCell(i).WaterLevel = waterLevel;
         }
+
+        xMin = mapBorderX;
+        xMax = x - mapBorderX;
+        zMin = mapBorderZ;
+        zMax = z - mapBorderZ;
+
 
         CreateLand();
         SetTerrainType();
@@ -171,7 +185,7 @@ public class HexMapGenerator_Script : MonoBehaviour {
 
     HexCell_Script GetRandomCell()
     {
-        return grid.GetCell(Random.Range(0, cellCount));
+        return grid.GetCell(Random.Range(xMin,xMax),Random.Range(zMin,zMax));
     }
 
     void CreateLand()

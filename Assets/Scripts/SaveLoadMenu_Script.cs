@@ -14,7 +14,7 @@ public class SaveLoadMenu_Script : MonoBehaviour {
     public Text actionButtonLabel;
 
     public InputField nameInput;
-    public const int mapVersionNumber = 2;
+    public const int mapVersionNumber = 3;
     public RectTransform listContent;
     public SaveLoadItem_Script itemPrefab;
 

@@ -34,12 +34,17 @@ public class HexGrid_Script : MonoBehaviour {
     HexCell_Script currentPathFrom, currentPathTo;
     bool currenPathExists;
 
+    List<HexUnit_Script> units = new List<HexUnit_Script>();
+
+    public  HexUnit_Script unitPrefab;
+
     //public Color[] colors;
 
     private void Awake()
     {
         HexMetrics_Script.noiseSource = noiseSource;
         HexMetrics_Script.InitializeHashGrid(seed);
+        HexUnit_Script.unitPrefab = unitPrefab;
        // HexMetrics_Script.colors = colors;
 
         //gridCanvas = GetComponentInChildren<Canvas>();
@@ -58,6 +63,7 @@ public class HexGrid_Script : MonoBehaviour {
         }
 
         ClearPath();
+        ClearUnits();
 
         if (chunks!=null)
         {
@@ -112,6 +118,7 @@ public class HexGrid_Script : MonoBehaviour {
         {
             HexMetrics_Script.noiseSource = noiseSource;
             HexMetrics_Script.InitializeHashGrid(seed);
+            HexUnit_Script.unitPrefab = unitPrefab;
             //HexMetrics_Script.colors = colors;
         }
 
@@ -224,11 +231,18 @@ public class HexGrid_Script : MonoBehaviour {
         {
             cells[i].Save(writer);
         }
+
+        writer.Write(units.Count);
+        for(int i =0; i<units.Count;i++)
+        {
+            units[i].Save(writer);
+        }
     }
 
     public void Load(BinaryReader reader)
     {
         ClearPath();
+        ClearUnits();
         int x, z;
         x = reader.ReadInt32();
         z = reader.ReadInt32();
@@ -245,6 +259,13 @@ public class HexGrid_Script : MonoBehaviour {
         for (int i = 0; i < chunks.Length; i++)
         {
             chunks[i].Refresh();
+        }
+
+        
+        int unitCount = reader.ReadInt32();
+        for(int i=0; i<unitCount;i++)
+        {
+            HexUnit_Script.Load(reader, this);
         }
     }
 
@@ -311,7 +332,7 @@ public class HexGrid_Script : MonoBehaviour {
             }
 
 
-            int currentTurn = current.Distance / speed;
+            int currentTurn = (current.Distance-1) / speed;
 
             for (HexDirection d = HexDirection.NE;d<=HexDirection.NW;d++)
             {
@@ -322,7 +343,7 @@ public class HexGrid_Script : MonoBehaviour {
                 {
                     continue;
                 }
-                if (neighbor.IsUnderwater)
+                if (neighbor.IsUnderwater||neighbor.Unit)
                     continue;
                 
 
@@ -351,6 +372,7 @@ public class HexGrid_Script : MonoBehaviour {
 
                 if(neighbor.SearchPhase<searchFrontierPhase)
                 {
+                    neighbor.SearchPhase = searchFrontierPhase;
                     neighbor.Distance = distance;
                     //neighbor.SetLabel(turn.ToString());
                     neighbor.PathFrom = current;
@@ -379,7 +401,7 @@ public class HexGrid_Script : MonoBehaviour {
             HexCell_Script current = currentPathTo;
             while(current!=currentPathFrom)
             {
-                int turn = current.Distance / speed;
+                int turn = (current.Distance-1) / speed;
                 current.SetLabel(turn.ToString());
                 current.EnableHighlight(Color.white);
                 current = current.PathFrom;
@@ -388,7 +410,7 @@ public class HexGrid_Script : MonoBehaviour {
         currentPathFrom.EnableHighlight(Color.blue);
         currentPathTo.EnableHighlight(Color.red);
     }
-    void ClearPath()
+    public void ClearPath()
     {
         if (currenPathExists)
         {
@@ -404,5 +426,59 @@ public class HexGrid_Script : MonoBehaviour {
         }
         currentPathFrom = null;
         currentPathTo=null;
+    }
+
+    void ClearUnits()
+    {
+        for(int i =0; i<units.Count;i++)
+        {
+            units[i].Die();
+        }
+        units.Clear();
+    }
+
+    public void AddUnit(HexUnit_Script unit, HexCell_Script location, float orientation)
+    {
+        units.Add(unit);
+        unit.transform.SetParent(transform, false);
+        unit.Location = location;
+        unit.Orientation = orientation;
+    }
+
+    public void RemoveUnit(HexUnit_Script unit)
+    {
+        units.Remove(unit);
+        unit.Die();
+        unit.Die();
+    }
+
+    public HexCell_Script GetCell(Ray ray)
+    {
+        RaycastHit hit;
+        if(Physics.Raycast(ray,out hit))
+        {
+            return GetCell(hit.point);
+        }
+        return null; 
+    }
+
+    public bool HasPath
+    {
+        get { return currenPathExists; }
+    }
+
+    public List<HexCell_Script> GetPath()
+    {
+        if (!currenPathExists)
+            return null;
+
+        List<HexCell_Script> path = ListPool<HexCell_Script>.Get();
+        for(HexCell_Script c= currentPathTo; c!=currentPathFrom;c=c.PathFrom)
+        {
+            path.Add(c);
+        }
+        path.Add(currentPathFrom);
+        path.Reverse();
+        return path;
     }
 }

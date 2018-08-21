@@ -199,11 +199,17 @@ public class HexCell_Script : MonoBehaviour {
                     neighbor.chunk.Refresh();
                 }
             }
+
+            if (Unit)
+                Unit.ValidateLocation();
         }
     }
     void RefreshSelfOnly()
     {
         chunk.Refresh();
+
+        if (Unit)
+            Unit.ValidateLocation();
     }
     public void RemoveOutgoingRiver()
     {
@@ -433,7 +439,7 @@ public class HexCell_Script : MonoBehaviour {
     public void Save(BinaryWriter writer)
     {
         writer.Write((byte)terrainTypeIndex);
-        writer.Write((byte)elevation+127);
+        writer.Write((byte)(elevation+127));
         writer.Write((byte)waterLevel);
         writer.Write((byte)urbanLevel);
         writer.Write((byte)farmLevel);
@@ -463,6 +469,7 @@ public class HexCell_Script : MonoBehaviour {
     {
         terrainTypeIndex = reader.ReadByte();
         elevation = reader.ReadByte();
+        elevation -= 127;
         RefreshPosition();
         waterLevel = reader.ReadByte();
         urbanLevel = reader.ReadByte();
@@ -562,4 +569,6 @@ public class HexCell_Script : MonoBehaviour {
     }
 
     public int SearchPhase { get; set; }
+
+    public HexUnit_Script Unit { get; set; }
 }
